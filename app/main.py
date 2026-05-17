@@ -429,11 +429,9 @@ with tab4:
             else:
                 try:
                     with st.spinner("Gemini analyse votre question…"):
-                        gemini_model = genai.GenerativeModel(
-                            model_name="gemini-1.5-flash-latest",
-                            system_instruction=SYSTEM_CONTEXT,
-                        )
-                        response = gemini_model.generate_content(user_question)
+                        gemini_model = genai.GenerativeModel(model_name="gemini-pro")
+                        full_prompt = f"{SYSTEM_CONTEXT}\n\nQuestion de l'utilisateur : {user_question}"
+                        response = gemini_model.generate_content(full_prompt)
                         st.subheader("💬 Réponse de Gemini")
                         st.write(response.text)
                         logger.info("Question Gemini : %s", user_question[:200])
