@@ -23,8 +23,9 @@ mlartifacts/
 logs/*.log
 
 # ── Données ───────────────────────────────────────────────────────────────────
-data/*.csv
-data/*.parquet
+# Commenté pour permettre d'envoyer le dataset d'exemple sur GitHub
+# data/*.csv
+# data/*.parquet
 
 # ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
