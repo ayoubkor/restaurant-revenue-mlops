@@ -430,7 +430,7 @@ with tab4:
                 try:
                     with st.spinner("Gemini analyse votre question…"):
                         gemini_model = genai.GenerativeModel(
-                            model_name="gemini-1.5-flash",
+                            model_name="gemini-1.5-flash-latest",
                             system_instruction=SYSTEM_CONTEXT,
                         )
                         response = gemini_model.generate_content(user_question)
