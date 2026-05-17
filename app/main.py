@@ -96,21 +96,39 @@ label_encoders = get_label_encoders()
 scaler = get_scaler()
 
 
+def get_secret(key: str, default: str = "") -> str:
+    """Récupère un secret depuis l'environnement ou st.secrets."""
+    val = os.getenv(key)
+    if val:
+        return val
+    try:
+        if key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
+    return default
+
 @st.cache_resource(show_spinner="Chargement du modèle champion…")
 def load_champion():
     """Charge le modèle en Production depuis le MLflow Model Registry."""
     try:
-        mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", ""))
-        os.environ["MLFLOW_TRACKING_USERNAME"] = os.getenv("DAGSHUB_USERNAME", "")
-        os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("DAGSHUB_TOKEN", "")
-        os.environ["MLFLOW_TRACKING_TOKEN"] = os.getenv("DAGSHUB_TOKEN", "")
-        os.environ["DAGSHUB_CLIENT_TOKEN"] = os.getenv("DAGSHUB_TOKEN", "")
+        mlflow.set_tracking_uri(get_secret("MLFLOW_TRACKING_URI"))
         
-        model_name = os.getenv("MODEL_NAME", "RestaurantRevenueModel")
-        model_stage = os.getenv("MODEL_STAGE", "Production")
+        dagshub_user = get_secret("DAGSHUB_USERNAME")
+        dagshub_token = get_secret("DAGSHUB_TOKEN")
+        
+        os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_user
+        os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+        os.environ["MLFLOW_TRACKING_TOKEN"] = dagshub_token
+        os.environ["DAGSHUB_CLIENT_TOKEN"] = dagshub_token
+        
+        model_name = get_secret("MODEL_NAME", "RestaurantRevenueModel")
+        model_stage = get_secret("MODEL_STAGE", "Production")
         model_uri = f"models:/{model_name}/{model_stage}"
+        
+        logger.info(f"Tentative de chargement du modèle depuis URI : {model_uri}")
         model = mlflow.sklearn.load_model(model_uri)
-        logger.info("Modèle champion chargé depuis : %s", model_uri)
+        logger.info("Modèle champion chargé avec succès.")
         return model, None
     except Exception as exc:
         logger.error("Impossible de charger le modèle champion : %s", exc)
@@ -370,7 +388,7 @@ with tab4:
         "l'interprétation des prédictions ou l'amélioration du modèle."
     )
 
-    gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+    gemini_api_key = get_secret("GEMINI_API_KEY", "")
     if not gemini_api_key or gemini_api_key == "ta_cle_gemini":
         st.warning(
             "⚠️ Clé API Gemini non configurée ou invalide. "
