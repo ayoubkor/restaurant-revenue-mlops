@@ -103,15 +103,18 @@ def load_champion():
         mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", ""))
         os.environ["MLFLOW_TRACKING_USERNAME"] = os.getenv("DAGSHUB_USERNAME", "")
         os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("DAGSHUB_TOKEN", "")
+        os.environ["MLFLOW_TRACKING_TOKEN"] = os.getenv("DAGSHUB_TOKEN", "")
+        os.environ["DAGSHUB_CLIENT_TOKEN"] = os.getenv("DAGSHUB_TOKEN", "")
+        
         model_name = os.getenv("MODEL_NAME", "RestaurantRevenueModel")
         model_stage = os.getenv("MODEL_STAGE", "Production")
         model_uri = f"models:/{model_name}/{model_stage}"
         model = mlflow.sklearn.load_model(model_uri)
         logger.info("Modèle champion chargé depuis : %s", model_uri)
-        return model
+        return model, None
     except Exception as exc:
         logger.error("Impossible de charger le modèle champion : %s", exc)
-        return None
+        return None, str(exc)
 
 # ════════════════════════════════════════════════════════════════════════════════
 # ONGLETS
@@ -188,10 +191,11 @@ with tab2:
     st.title("🎯 Prédiction unitaire")
     st.markdown("Renseignez les caractéristiques du restaurant pour estimer son revenu mensuel.")
 
-    model = load_champion()
+    model, err_msg = load_champion()
     if model is None:
         st.error(
-            "⚠️ Impossible de charger le modèle champion depuis MLflow.\n\n"
+            f"⚠️ Impossible de charger le modèle champion depuis MLflow.\n\n"
+            f"**Erreur MLflow** : `{err_msg}`\n\n"
             "Vérifiez que :\n"
             "1. Les variables `.env` sont correctement renseignées\n"
             "2. Un modèle est bien en stage **Production** dans DagsHub\n"
@@ -302,9 +306,9 @@ with tab3:
             st.subheader("Aperçu des données importées")
             st.dataframe(df_upload.head(), use_container_width=True)
 
-            model_batch = load_champion()
+            model_batch, err_msg_batch = load_champion()
             if model_batch is None:
-                st.error("⚠️ Modèle non disponible. Vérifiez votre configuration MLflow.")
+                st.error(f"⚠️ Modèle non disponible. Vérifiez votre configuration MLflow.\nErreur : {err_msg_batch}")
             else:
                 if st.button("🚀 Lancer les prédictions", use_container_width=True):
                     missing_cols = [c for c in colonnes_attendues if c not in df_upload.columns]
